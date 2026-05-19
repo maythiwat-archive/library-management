@@ -3,7 +3,6 @@ FactoryBot.define do
     email { "user@example.com" }
     password { "password123" }
     password_confirmation { "password123" }
-    association :member_profile, factory: :member_profile
   end
 
   trait :with_member_profile do
