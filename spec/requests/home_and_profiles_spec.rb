@@ -25,5 +25,13 @@ RSpec.describe "Home and Profiles", type: :request do
       follow_redirect!
       expect(response.body).to include('Profile updated')
     end
+
+    it "handles profile update failure" do
+      get edit_profile_path
+      expect(response).to have_http_status(:ok)
+      allow_any_instance_of(MemberProfile).to receive(:update).and_return(false)
+      patch profile_path, params: { member_profile: { name: '' } }
+      expect(response.status).to eq(422)
+    end
   end
 end

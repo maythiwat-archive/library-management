@@ -48,6 +48,12 @@ RSpec.describe "Dashboard", type: :request do
       patch restore_dashboard_book_path(book)
       expect(response).to redirect_to(dashboard_books_path)
     end
+
+    it "hits dashboard book show redirect to edit" do
+      book = create(:book)
+      get dashboard_book_path(book)
+      expect(response).to redirect_to(edit_dashboard_book_path(book))
+    end
   end
 
   it "manages authors" do
@@ -61,6 +67,29 @@ RSpec.describe "Dashboard", type: :request do
     # failure path
     post dashboard_authors_path, params: { author: { name: '' } }
     expect(response.status).to eq(422)
+  end
+
+  it "hits authors new and update success" do
+    get new_dashboard_author_path
+    expect(response).to have_http_status(:ok)
+
+    author = create(:author, name: 'Old')
+    patch dashboard_author_path(author), params: { author: { name: 'New' } }
+    expect(response).to redirect_to(dashboard_authors_path)
+  end
+
+  it "renders edit author and handles update failure and missing author" do
+    author = create(:author, name: 'A1')
+    get edit_dashboard_author_path(author)
+    expect(response).to have_http_status(:ok)
+
+    patch dashboard_author_path(author), params: { author: { name: '' } }
+    expect(response.status).to eq(422)
+
+    get edit_dashboard_author_path(id: 999_999)
+    expect(response).to redirect_to(dashboard_authors_path)
+    follow_redirect!
+    expect(response.body).to include('Author not found')
   end
 
   it "handles missing book edit and restore" do
@@ -103,6 +132,28 @@ RSpec.describe "Dashboard", type: :request do
     expect(response.status).to eq(422)
   end
 
+  it "hits tags new and update success" do
+    get new_dashboard_tag_path
+    expect(response).to have_http_status(:ok)
+
+    tag = create(:tag, name: 'OldT')
+    patch dashboard_tag_path(tag), params: { tag: { name: 'NewT' } }
+    expect(response).to redirect_to(dashboard_tags_path)
+  end
+
+  it "handles tag edit missing and update failure" do
+    tag = create(:tag, name: 'T1')
+    get edit_dashboard_tag_path(tag)
+    expect(response).to have_http_status(:ok)
+    patch dashboard_tag_path(tag), params: { tag: { name: '' } }
+    expect(response.status).to eq(422)
+
+    get edit_dashboard_tag_path(id: 999_999)
+    expect(response).to redirect_to(dashboard_tags_path)
+    follow_redirect!
+    expect(response.body).to include('Tag not found')
+  end
+
   context "loans management" do
     it "lists, creates, deletes and returns loans" do
       get dashboard_loans_path
@@ -132,6 +183,13 @@ RSpec.describe "Dashboard", type: :request do
     # missing params should render new with 422
     post dashboard_loans_path, params: { loan: { book_id: nil, user_id: nil } }
     expect(response.status).to eq(422)
+  end
+
+  it "handles dashboard user not found" do
+    get dashboard_user_path(id: 999_999)
+    expect(response).to redirect_to(dashboard_users_path)
+    follow_redirect!
+    expect(response.body).to include('User not found')
   end
 
   it "manages users index/show/update/destroy" do

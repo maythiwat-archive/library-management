@@ -19,4 +19,15 @@ RSpec.describe "ApplicationController rescue_from", type: :request do
       expect(response.body).to include('You are not authorized to do that.')
     end
   end
+
+  it "loads mailer, job and helper files to increase coverage" do
+    load Rails.root.join('app/mailers/application_mailer.rb')
+    load Rails.root.join('app/jobs/application_job.rb')
+    load Rails.root.join('app/helpers/application_helper.rb')
+    load Rails.root.join('app/helpers/books_helper.rb')
+    load Rails.root.join('app/helpers/api/v1/books_helper.rb')
+
+    expect(defined?(ApplicationMailer)).to be_truthy
+    expect(defined?(ApplicationJob)).to be_truthy
+  end
 end

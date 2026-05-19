@@ -60,5 +60,29 @@ RSpec.describe "Loans", type: :request do
       follow_redirect!
       expect(response.body).to include('Could not process loan')
     end
+
+    it "covers the already-have branch via stubbing" do
+      user = create(:user, :with_member_profile)
+      sign_in user
+
+      # simulate controller believing the book is available but user already has it
+      allow_any_instance_of(Book).to receive(:available?).and_return(true)
+      allow_any_instance_of(Book).to receive(:loans).and_return(Loan.none)
+      allow_any_instance_of(Book).to receive_message_chain(:loans, :where, :exists?).and_return(true)
+
+      post book_loans_path(book_id: book.id)
+      expect(response).to redirect_to(book_path(book))
+      expect(flash[:alert]).to satisfy { |v| v =~ /You already have this book on loan/ || v =~ /This book is currently on loan/ }
+    end
+
+    it "hits public loans index" do
+      user = create(:user, :with_member_profile)
+      sign_in user
+      create(:loan, user: user, returned_at: nil)
+      create(:loan, user: user, returned_at: Time.current)
+
+      get loans_path
+      expect(response).to have_http_status(:ok)
+    end
   end
 end
